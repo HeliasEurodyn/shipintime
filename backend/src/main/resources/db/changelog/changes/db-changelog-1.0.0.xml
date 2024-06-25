@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="2024-06-05-1" author="vuk">
+        <createTable tableName="user_seq">
+            <column name="next_val" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="2024-06-05-2" author="vuk">
+        <insert tableName="user_seq">
+            <column name="next_val" valueNumeric="501"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="2024-06-05-3" author="vuk">
+        <createTable tableName="user">
+            <column name="id" type="bigint">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="connector_url" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="email" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="firstname" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="lastname" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="password" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="repeat_password" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="role" type="varchar(5)">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <!-- Set auto increment for id column -->
+        <addAutoIncrement
+                tableName="user"
+                columnName="id"
+                columnDataType="bigint"/>
+
+        <!-- Add charset and collation settings -->
+    </changeSet>
+
+    <changeSet id="2024-06-05-4" author="vuk">
+        <createTable tableName="user_profiles">
+            <column name="id" type="bigint">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="address" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="date_of_birth" type="datetime(6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="first_name" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="last_name" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="phone_number" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="true" unique="true"/>
+            </column>
+        </createTable>
+
+        <addAutoIncrement
+                tableName="user_profiles"
+                columnName="id"
+                columnDataType="bigint"/>
+
+        <addUniqueConstraint
+                tableName="user_profiles"
+                columnNames="user_id"
+                constraintName="FK_USER_PROFILES_USER_ID"/>
+
+        <addForeignKeyConstraint
+                baseTableName="user_profiles"
+                baseColumnNames="user_id"
+                constraintName="UNIQUE_USER_ID"
+                referencedTableName="user"
+                referencedColumnNames="id"/>
+
+    </changeSet>
+
+    <changeSet id="2024-06-05-5" author="vuk">
+        <createTable tableName="users">
+            <column name="id" type="bigint">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="username" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" type="varchar(100)">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <addAutoIncrement
+                tableName="users"
+                columnName="id"
+                columnDataType="bigint"/>
+
+    </changeSet>
+
+    <changeSet id="2024-06-05-6" author="vuk">
+        <createTable tableName="token_seq">
+            <column name="next_val" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <insert tableName="token_seq">
+            <column name="next_val" value="3551"/>
+        </insert>
+
+    </changeSet>
+
+    <changeSet id="2024-06-05-7" author="vuk">
+        <createTable tableName="token">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="expiration_date" type="datetime(6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="expired" type="bit(1)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="revoked" type="bit(1)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="token" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="token_type" type="enum('BEARER')">
+                <constraints nullable="true"/>
+            </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="2024-06-05-8" author="vuk">
+        <createTable tableName="logs_seq">
+            <column name="next_val" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+        <sql>INSERT INTO `logs_seq` (`next_val`)
+             VALUES (1);</sql>
+    </changeSet>
+
+    <changeSet id="2024-06-05-9" author="vuk">
+        <createTable tableName="logs">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="action" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="consumer" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="contract_id" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_on" type="datetime(6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="dat_claims" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="mode" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="provider" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="purpose" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="recipient_agent" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="request_id" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="resource_id" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="resource_type" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="sender_agent" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="stage" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    
+
+</databaseChangeLog>
