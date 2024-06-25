@@ -1,2 +1,0 @@
-# enershare
-Frontend project.
