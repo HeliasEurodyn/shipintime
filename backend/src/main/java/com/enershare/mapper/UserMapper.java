@@ -6,6 +6,8 @@ import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
+
 
 @Mapper(componentModel = "spring", nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS)
 public abstract class UserMapper {
@@ -14,6 +16,8 @@ public abstract class UserMapper {
     private PasswordEncoder passwordEncoder;
 
     public abstract UserDTO map(User user);
+
+    public abstract List<User> map(List<UserDTO> user);
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "email", source = "email")

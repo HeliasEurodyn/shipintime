@@ -31,7 +31,13 @@ public class SecurityConfig {
                 .csrf()
                 .disable()
                 .authorizeHttpRequests()
-                .requestMatchers("/auth/**", "/health-page", "/logs/create", "/error")
+                .requestMatchers("/auth/**", "/health-page",
+                        "/user/sync",
+                        "/user/sync/force",
+                        "/shiping-order/sync",
+                        "/shiping-order/sync/force",
+                        "/shiping-order/load", "/shiping-order/su/reset","/shiping-order/su/execute",
+                        "/logs/create", "/error")
                 .permitAll()
                 .anyRequest()
                 .authenticated()
@@ -49,4 +55,5 @@ public class SecurityConfig {
         return http.build();
 
     }
+
 }

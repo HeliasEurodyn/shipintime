@@ -3,6 +3,7 @@ package com.enershare.dto.shiping_order;
 import com.enershare.dto.base.BaseDTO;
 import com.enershare.model.base.MainEntity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.Column;
 import lombok.*;
 import lombok.experimental.Accessors;
 
@@ -28,6 +29,10 @@ public class ShipingOrderDTO extends BaseDTO {
 
     private String ownerId;
 
+    private String s1truck;
+
+    private String truck;
+
     private boolean checkedIn;
 
     private Instant checkedInDate;
@@ -35,4 +40,11 @@ public class ShipingOrderDTO extends BaseDTO {
     private boolean executed;
 
     private Instant executionDate;
+
+    private Integer status;
+
+    private boolean loading;
+
+    private Instant loadingDate;
+
 }

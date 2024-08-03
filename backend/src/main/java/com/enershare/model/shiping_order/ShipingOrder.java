@@ -38,14 +38,30 @@ public class ShipingOrder extends MainEntity {
     private String ownerId;
 
     @Column
+    private String s1truck;
+
+    @Column
+    private String truck;
+
+    @Column(updatable = false)
     private boolean checkedIn;
 
-    @Column
+    @Column(updatable = false)
     private Instant checkedInDate;
 
-    @Column
+    @Column(updatable = false)
+    private boolean loading;
+
+    @Column(updatable = false)
+    private Instant loadingDate;
+
+    @Column(updatable = false)
     private boolean executed;
 
-    @Column
+    @Column(updatable = false)
     private Instant executionDate;
+
+
+    @Column(updatable = false)
+    private Integer status;
 }

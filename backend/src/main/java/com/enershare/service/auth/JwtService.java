@@ -49,6 +49,7 @@ public class JwtService {
     public String generateRefreshToken(User user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", user.getId());
+        claims.put("phone", user.getPhone());
         claims.put("userRole", user.getRole());
         return buildToken(claims, user, refreshTokenExpiration);
     }
@@ -67,17 +68,17 @@ public class JwtService {
     public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", user.getId());
+        claims.put("phone", user.getPhone());
         claims.put("userRole", user.getRole());
         return generateToken(claims, user);
     }
 
-    public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String userName = extractUsername(token);
-        return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
-
+    public boolean isTokenValid(String token, User user) {
+        final String userId = extractClaim("userId");
+        return (userId.equals(user.getId()) && !isTokenExpired(token));
     }
 
-    private boolean isTokenExpired(String token) {
+    public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
@@ -137,6 +138,24 @@ public class JwtService {
                 .getBody();
 
         return  claims.get("userId", String.class);
+    }
+
+    public String extractClaim(String key) {
+
+        String token = this.getJwt();
+
+        if(token == null){
+            return "";
+        }
+
+        Claims claims = Jwts
+                .parserBuilder()
+                .setSigningKey(getSingKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        return  claims.get(key, String.class);
     }
 
     private String getJwt() {

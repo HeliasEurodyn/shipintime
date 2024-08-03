@@ -35,8 +35,9 @@ public class UserDTO extends BaseDTO {
 
     private Role role;
 
+    private String language;
 
-    public UserDTO(String id,String username, String firstname, String lastname, String email,  String phone, Role role) {
+    public UserDTO(String id, String username, String firstname, String lastname, String email,  String phone, Role role) {
         this.setId(id);
         this.username = username;
         this.firstname = firstname;
@@ -44,7 +45,6 @@ public class UserDTO extends BaseDTO {
         this.email = email;
         this.phone = phone;
         this.role = role;
-
     }
 
 }

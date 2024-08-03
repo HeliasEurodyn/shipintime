@@ -1,20 +1,30 @@
 package com.enershare.service.user;
 
 import com.enershare.dto.user.UserDTO;
+import com.enershare.dto.user.UserDocumentDTO;
+import com.enershare.enums.Role;
+import com.enershare.exception.ApplicationException;
 import com.enershare.exception.EmailAlreadyExistsException;
 import com.enershare.mapper.UserMapper;
 import com.enershare.model.user.User;
+import com.enershare.model.user.UserDocument;
+import com.enershare.repository.user.UserDocumentRepository;
 import com.enershare.repository.user.UserRepository;
+import com.enershare.service.auth.JwtService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Optional;
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -23,14 +33,25 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+
+    private final UserDocumentRepository userDocumentRepository;
+
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
+    private final JwtService jwtService;
+
     @Autowired
-    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository,
+                       UserDocumentRepository userDocumentRepository,
+                       UserMapper userMapper,
+                       PasswordEncoder passwordEncoder,
+                       JwtService jwtService) {
         this.userRepository = userRepository;
+        this.userDocumentRepository = userDocumentRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     public long getTotalUsers() {
@@ -74,7 +95,7 @@ public class UserService {
 
     public void updateUser(@RequestBody UserDTO userDTO) {
         Optional<User> optionalUser = userRepository.findById(userDTO.getId());
-        User existingUser = optionalUser.orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User existingUser = optionalUser.orElseThrow(() -> new ApplicationException("1001","User Not Found By Id"));
 
         String newEmail = userDTO.getEmail();
         if (!existingUser.getEmail().equals(newEmail)) {
@@ -95,6 +116,85 @@ public class UserService {
         }
 
         userRepository.save(existingUser);
+    }
+
+
+    @Transactional
+    @Modifying
+    public void syncForce(List<UserDTO> userDTOs) {
+
+        userDTOs.forEach(u -> u.setRole(Role.USER));
+
+        List<User> usersToSave = this.userMapper.map(userDTOs);
+
+        int batchSize = 100; // Adjust batch size based on performance testing
+        for (int i = 0; i < usersToSave.size(); i += batchSize) {
+            List<User> batch = usersToSave.subList(i, Math.min(i + batchSize, usersToSave.size()));
+            batch.parallelStream()
+                    .filter(u -> u.getPassword() != null && !u.getPassword().isEmpty())
+                    .forEach(u -> u.setPassword(passwordEncoder.encode(u.getPassword())));
+        }
+
+        userRepository.saveAll(usersToSave);
+    }
+
+
+    @Transactional
+    public void sync(List<UserDTO> userDTOs) {
+
+        List<String> s1IdList = userDTOs.stream()
+                .map(UserDTO::getS1Id)
+                .collect(Collectors.toList());
+
+        List<String> existingS1Ids = userRepository.findExistingS1Ids(s1IdList);
+
+        List<UserDTO> usersToSync = userDTOs.stream()
+                .filter(dto -> !existingS1Ids.contains(dto.getS1Id()))
+                .collect(Collectors.toList());
+
+        usersToSync.forEach(u -> u.setRole(Role.USER));
+
+        List<User> usersToSave = this.userMapper.map(usersToSync);
+
+        int batchSize = 100; // Adjust batch size based on performance testing
+        for (int i = 0; i < usersToSave.size(); i += batchSize) {
+            List<User> batch = usersToSave.subList(i, Math.min(i + batchSize, usersToSave.size()));
+            batch.parallelStream()
+                    .filter(u -> u.getPassword() != null && !u.getPassword().isEmpty())
+                    .forEach(u -> u.setPassword(passwordEncoder.encode(u.getPassword())));
+        }
+
+        userRepository.saveAll(usersToSave);
+    }
+
+    @Transactional
+    @Modifying
+    public Map saveDocument(MultipartFile file, String type) throws IOException {
+        String userId = jwtService.getUserId();
+        String fileName = file.getOriginalFilename();
+        String fileType = file.getContentType();
+        byte[] data = file.getBytes();
+
+        UserDocument userDocument = UserDocument.builder()
+                .userId(userId)
+                .documentType(type)
+                .filename(fileName)
+                .filetype(fileType)
+                .document(data)
+                .build();
+
+        userDocumentRepository.deleteAllByDocumentType(type);
+        UserDocument saved = userDocumentRepository.save(userDocument);
+        return Collections.singletonMap("id", saved.getId());
+    }
+
+    public List<UserDocumentDTO> getDocuments() {
+        String userId = jwtService.getUserId();
+       return userDocumentRepository.getDocuments(userId);
+    }
+
+    public UserDocument getDocument(String id) {
+        return userDocumentRepository.findById(id).orElseThrow(() -> new ApplicationException("0","Document Not Found By Id"));
     }
 
 }

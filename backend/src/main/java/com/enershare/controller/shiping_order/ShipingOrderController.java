@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -36,19 +37,58 @@ public class ShipingOrderController {
         return shipingOrderService.getObject(id);
     }
 
-    @PostMapping
-    public ShipingOrderDTO postObject(@RequestBody ShipingOrderDTO shipingOrderDTO) throws IOException {
-        return shipingOrderService.postObject(shipingOrderDTO);
-    }
-
-    @PutMapping
-    public ShipingOrderDTO putObject(@RequestBody ShipingOrderDTO shipingOrderDTO) {
-        return shipingOrderService.postObject(shipingOrderDTO);
-    }
+//    @PostMapping
+//    public ShipingOrderDTO postObject(@RequestBody ShipingOrderDTO shipingOrderDTO) {
+//        return shipingOrderService.postObject(shipingOrderDTO);
+//    }
+//
+//    @PutMapping
+//    public ShipingOrderDTO putObject(@RequestBody ShipingOrderDTO shipingOrderDTO) {
+//        return shipingOrderService.postObject(shipingOrderDTO);
+//    }
 
     @DeleteMapping
     public void deleteObject(@RequestParam("id") String id) throws Exception {
         shipingOrderService.deleteObject(id);
     }
 
+    @PostMapping(path = "/sync")
+    public void sync(@RequestBody List<ShipingOrderDTO> shipingOrdersDTO) {
+        shipingOrderService.sync(shipingOrdersDTO);
+    }
+
+    @PostMapping(path = "/sync/force")
+    public void syncForce(@RequestBody List<ShipingOrderDTO> shipingOrdersDTO) {
+        shipingOrderService.syncForce(shipingOrdersDTO);
+    }
+
+    @PostMapping(path = "/check-in")
+    public void checkIn(@RequestBody Map<String, String> parameters) throws IOException {
+        shipingOrderService.checkIn(parameters.get("id"));
+    }
+
+    @PostMapping(path = "/load")
+    public void load(@RequestBody Map<String, String> parameters) {
+        shipingOrderService.load(parameters.get("id"));
+    }
+
+    @PostMapping(path = "/su/check-in")
+    public void suCheckIn(@RequestBody Map<String, String> parameters) {
+        shipingOrderService.suCheckIn(parameters.get("id"));
+    }
+
+    @PostMapping(path = "/su/load")
+    public void suLoad(@RequestBody Map<String, String> parameters) {
+        shipingOrderService.suLoad(parameters.get("id"));
+    }
+
+    @PostMapping(path = "/su/execute")
+    public void execute(@RequestBody Map<String, String> parameters) {
+        shipingOrderService.execute(parameters.get("id"));
+    }
+
+    @PostMapping(path = "/su/reset")
+    public void reset(@RequestBody Map<String, String> parameters) {
+        shipingOrderService.reset(parameters.get("id"));
+    }
 }

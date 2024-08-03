@@ -1,17 +1,21 @@
 package com.enershare.controller.user;
 
 import com.enershare.dto.user.UserDTO;
-import com.enershare.service.auth.JwtService;
+import com.enershare.dto.user.UserDocumentDTO;
+import com.enershare.model.user.UserDocument;
 import com.enershare.service.user.UserService;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 
 @Slf4j
@@ -20,60 +24,36 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final Logger logger = LoggerFactory.getLogger(UserController.class);
     private final UserService userService;
-    private final JwtService jwtService;
 
-    @GetMapping
-    public ResponseEntity<String> testJwt(HttpServletRequest request) {
-        String token = jwtService.getJwt(request);
-        if (token != null) {
-            String userId = jwtService.getUserIdByToken(token);
-            return ResponseEntity.ok("User ID: " + userId);
-        } else {
-            return ResponseEntity.badRequest().body("No JWT token found in the request.");
-        }
+    @PostMapping("/sync")
+    public void sync(@RequestBody List<UserDTO> userDTOs) {
+        userService.sync(userDTOs);
     }
 
-    @GetMapping("/total-users")
-    public long getTotalUsers() {
-        return userService.getTotalUsers();
+    @PostMapping("/sync/force")
+    public void syncForce(@RequestBody List<UserDTO> userDTOs) {
+        userService.syncForce(userDTOs);
     }
 
-    @GetMapping(path = "/all-users")
-    Page<UserDTO> getUsers(@RequestParam int page, @RequestParam int size) {
-        return userService.getUsers(page, size);
+    @PostMapping("/document")
+    public Map document(@RequestParam("file") MultipartFile file, @RequestParam("type") String type) throws IOException {
+            return userService.saveDocument(file, type);
+    }
+    @GetMapping("/documents")
+    public List<UserDocumentDTO> documents() {
+            return userService.getDocuments();
     }
 
-    @PostMapping("/create")
-    public void createUser(@RequestBody UserDTO userDTO) {
-        userService.createUser(userDTO);
+    @GetMapping("/document/download/{id}")
+    public ResponseEntity<ByteArrayResource> downloadFile(@PathVariable String id) {
+        UserDocument userDocument = userService.getDocument(id);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + userDocument.getFilename())
+                .contentType(MediaType.parseMediaType(userDocument.getFiletype()))
+                .contentLength(userDocument.getDocument().length)
+                .body(new ByteArrayResource(userDocument.getDocument()));
     }
 
-    @DeleteMapping
-    public void deleteObject(@RequestParam("id") String id) {
-        userService.deleteObject(id);
-    }
-
-    @GetMapping(path = "/by-id")
-    UserDTO getObject(@RequestParam("id") String id) {
-        return userService.getObject(id);
-    }
-
-//    @PutMapping("/update")
-//    public ResponseEntity<String> updateUser(@RequestBody UserDTO userDTO) {
-//        try {
-//            userService.updateUser(userDTO);
-//            return ResponseEntity.ok("User updated successfully");
-//        } catch (Exception e) {
-//            logger.error("Error updating user. UserDTO: {}", userDTO, e);
-//            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("403 Forbidden: Insufficient permissions");
-//        }
-//    }
-
-    @PutMapping("/update")
-    public void updateUser(@RequestBody UserDTO userDTO) {
-        userService.updateUser(userDTO);
-    }
-    
 }
