@@ -112,7 +112,7 @@ public class AuthenticationService {
             throw new AuthenticationException("Phone number is required");
         }
 
-        var user = userRepository.findByPhone(request.getPhoneNumber()).orElseThrow(() -> new ApplicationException("1000","User Not Found By Phone"));
+        User user = userRepository.findByPhone(request.getPhoneNumber()).orElseThrow(() -> new ApplicationException("1000","User Not Found By Phone"));
 
         Random random = new Random();
         int randomCode = random.nextInt(1000000);
@@ -121,8 +121,18 @@ public class AuthenticationService {
 
         String token = apifonRest.auth();
 
+        String languageCode = user.getLanguage();
+        String message = "Καλώς ήρθατε στο Ship In Time! Ο κωδικός εισόδου σας είναι ο " + formattedCode;
+        if(languageCode.equals("BG")){
+            message = "Καλώς ήρθατε στο Ship In Time! Ο κωδικός εισόδου σας είναι ο " + formattedCode;
+        } else if("GB"){
+            message = "Καλώς ήρθατε στο Ship In Time! Ο κωδικός εισόδου σας είναι ο " + formattedCode;
+        } else if("AL"){
+            message = "Καλώς ήρθατε στο Ship In Time! Ο κωδικός εισόδου σας είναι ο " + formattedCode;
+        }
+
         Message message = Message.builder()
-                .text("Καλώς ήρθατε στο Ship In Time! Ο κωδικός εισόδου σας είναι ο " + formattedCode)
+                .text(message)
                 .sender_id("ShipInTime")
                 .build();
 

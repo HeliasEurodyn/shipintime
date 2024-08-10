@@ -210,6 +210,16 @@ public class ShipingOrderService {
 
         String token = apifonRest.auth();
 
+        String languageCode = user.getLanguage();
+        String message = "Η παραγγελία σας με αριθμό "+ shipingOrder.getS1Number() +" είναι έτοιμη προς φόρτωση, σας αναμένουμε στης ράμπα σε 10 λεπτά";
+        if(languageCode.equals("BG")){
+            message = "Η παραγγελία σας με αριθμό "+ shipingOrder.getS1Number() +" είναι έτοιμη προς φόρτωση, σας αναμένουμε στης ράμπα σε 10 λεπτά";
+        } else if("GB"){
+            message = "Η παραγγελία σας με αριθμό "+ shipingOrder.getS1Number() +" είναι έτοιμη προς φόρτωση, σας αναμένουμε στης ράμπα σε 10 λεπτά";
+        } else if("AL"){
+            message = "Η παραγγελία σας με αριθμό "+ shipingOrder.getS1Number() +" είναι έτοιμη προς φόρτωση, σας αναμένουμε στης ράμπα σε 10 λεπτά";
+        }
+
         Message message = Message.builder()
                 .text("Η παραγγελία σας με αριθμό "+ shipingOrder.getS1Number() +" είναι έτοιμη προς φόρτωση, σας αναμένουμε στης ράμπα σε 10 λεπτά")
                 .sender_id("ShipInTime")
