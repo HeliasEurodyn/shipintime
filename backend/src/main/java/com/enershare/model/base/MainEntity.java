@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
 import org.hibernate.annotations.OptimisticLockType;
 import org.hibernate.annotations.OptimisticLocking;
 import org.springframework.data.annotation.CreatedBy;
@@ -17,6 +18,7 @@ import java.time.Instant;
 @MappedSuperclass
 @OptimisticLocking(type = OptimisticLockType.VERSION)
 @EqualsAndHashCode
+@Accessors(chain = true)
 public abstract class MainEntity extends BaseEntity {
 
     @CreatedDate

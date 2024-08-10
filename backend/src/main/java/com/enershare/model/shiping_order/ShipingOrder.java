@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 import java.time.Instant;
 import java.util.Date;
@@ -18,6 +19,7 @@ import java.util.Date;
 @AllArgsConstructor
 @Entity
 @Table(name = "shiping_order")
+@Accessors(chain = true)
 public class ShipingOrder extends MainEntity {
 
     @Column

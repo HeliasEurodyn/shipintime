@@ -2,6 +2,7 @@ package com.enershare.controller.user;
 
 import com.enershare.dto.user.UserDTO;
 import com.enershare.dto.user.UserDocumentDTO;
+import com.enershare.exception.ApplicationException;
 import com.enershare.model.user.UserDocument;
 import com.enershare.service.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,11 @@ public class UserController {
     @GetMapping("/documents")
     public List<UserDocumentDTO> documents() {
             return userService.getDocuments();
+    }
+
+    @GetMapping("/current")
+    public UserDTO getCurrent() {
+        return userService.getCurrent();
     }
 
     @GetMapping("/document/download/{id}")

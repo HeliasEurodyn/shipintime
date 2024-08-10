@@ -3,6 +3,7 @@ package com.enershare.model.base;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
 import org.hibernate.annotations.OptimisticLockType;
 import org.hibernate.annotations.OptimisticLocking;
 
@@ -13,6 +14,7 @@ import java.util.UUID;
 @MappedSuperclass
 @OptimisticLocking(type = OptimisticLockType.VERSION)
 @EqualsAndHashCode
+@Accessors(chain = true)
 public class BaseEntity {
 
     @Id

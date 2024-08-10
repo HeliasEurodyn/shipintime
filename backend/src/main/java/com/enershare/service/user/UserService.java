@@ -193,6 +193,12 @@ public class UserService {
        return userDocumentRepository.getDocuments(userId);
     }
 
+    public UserDTO getCurrent() {
+        String userId = jwtService.getUserId();
+        var user = userRepository.findById(userId).orElseThrow(() -> new ApplicationException("1001","User Not Found By Id"));
+        return userMapper.map(user);
+    }
+
     public UserDocument getDocument(String id) {
         return userDocumentRepository.findById(id).orElseThrow(() -> new ApplicationException("0","Document Not Found By Id"));
     }

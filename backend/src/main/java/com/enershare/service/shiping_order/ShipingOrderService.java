@@ -89,7 +89,12 @@ public class ShipingOrderService {
     @Modifying
     public void syncForce(List<ShipingOrderDTO> shipingOrdersDTO) {
 
-        List<ShipingOrder> shipingOrders = this.shipingOrderMapper.mapDTOs(shipingOrdersDTO);
+        List<ShipingOrder> shipingOrders = this.shipingOrderMapper.toEntities(shipingOrdersDTO);
+
+        for (ShipingOrder model : shipingOrders) {
+            model.setCreatedOn(Instant.now());
+        }
+
         shipingOrderRepository.saveAll(shipingOrders);
 
 //        for (ShipingOrderDTO dto : shipingOrdersDTO) {
@@ -129,7 +134,12 @@ public class ShipingOrderService {
                 .filter(dto -> !existingS1Ids.contains(dto.getS1id()))
                 .collect(Collectors.toList());
 
-        List<ShipingOrder> shipingOrders = this.shipingOrderMapper.mapDTOs(ordersToSync);
+        List<ShipingOrder> shipingOrders = this.shipingOrderMapper.toEntities(ordersToSync);
+
+        for (ShipingOrder model : shipingOrders) {
+            model.setCreatedOn(Instant.now());
+        }
+
         shipingOrderRepository.saveAll(shipingOrders);
 
 //        for (ShipingOrderDTO dto : ordersToSync) {
