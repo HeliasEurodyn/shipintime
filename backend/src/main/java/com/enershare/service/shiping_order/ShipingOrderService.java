@@ -210,18 +210,17 @@ public class ShipingOrderService {
 
         String token = apifonRest.auth();
 
-        String languageCode = user.getLanguage();
-        String message = "Η παραγγελία σας με αριθμό "+ shipingOrder.getS1Number() +" είναι έτοιμη προς φόρτωση, σας αναμένουμε στης ράμπα σε 10 λεπτά";
-        if(languageCode.equals("BG")){
-            message = "Η παραγγελία σας με αριθμό "+ shipingOrder.getS1Number() +" είναι έτοιμη προς φόρτωση, σας αναμένουμε στης ράμπα σε 10 λεπτά";
-        } else if("GB"){
-            message = "Η παραγγελία σας με αριθμό "+ shipingOrder.getS1Number() +" είναι έτοιμη προς φόρτωση, σας αναμένουμε στης ράμπα σε 10 λεπτά";
-        } else if("AL"){
-            message = "Η παραγγελία σας με αριθμό "+ shipingOrder.getS1Number() +" είναι έτοιμη προς φόρτωση, σας αναμένουμε στης ράμπα σε 10 λεπτά";
+        String smsMessage = "Η παραγγελία σας με αριθμό "+ shipingOrder.getS1Number() +" είναι έτοιμη προς φόρτωση, σας αναμένουμε στην ράμπα φόρτωσης σε 10 λεπτά";
+        if(user.getLanguage().equals("GB")){
+            smsMessage = "Your order with number "+ shipingOrder.getS1Number() +" is ready for loading, we are expecting you at the loading ramp in 10 minutes.";
+        } else if(user.getLanguage().equals("AL")){
+            smsMessage = "Porosia juaj me numër "+ shipingOrder.getS1Number() +" është gati për ngarkim, ju presim te rampa e ngarkimit pas 10 minutash.";
+        } else if(user.getLanguage().equals("BG")){
+            smsMessage =  "Вашата поръчка с номер "+ shipingOrder.getS1Number() +" е готова за товарене, очакваме ви на рампата за товарене след 10 минути.";
         }
 
         Message message = Message.builder()
-                .text("Η παραγγελία σας με αριθμό "+ shipingOrder.getS1Number() +" είναι έτοιμη προς φόρτωση, σας αναμένουμε στης ράμπα σε 10 λεπτά")
+                .text(smsMessage)
                 .sender_id("ShipInTime")
                 .build();
 

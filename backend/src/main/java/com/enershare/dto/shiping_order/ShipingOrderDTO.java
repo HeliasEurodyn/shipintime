@@ -47,4 +47,6 @@ public class ShipingOrderDTO extends BaseDTO {
 
     private Instant loadingDate;
 
+    private String customers;
+
 }

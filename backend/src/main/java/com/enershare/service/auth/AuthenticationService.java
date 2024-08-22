@@ -112,7 +112,7 @@ public class AuthenticationService {
             throw new AuthenticationException("Phone number is required");
         }
 
-        User user = userRepository.findByPhone(request.getPhoneNumber()).orElseThrow(() -> new ApplicationException("1000","User Not Found By Phone"));
+        var user = userRepository.findByPhone(request.getPhoneNumber()).orElseThrow(() -> new ApplicationException("1000","User Not Found By Phone"));
 
         Random random = new Random();
         int randomCode = random.nextInt(1000000);
@@ -120,19 +120,17 @@ public class AuthenticationService {
         userRepository.setLoginCode(formattedCode, user.getId());
 
         String token = apifonRest.auth();
-
-        String languageCode = user.getLanguage();
-        String message = "Καλώς ήρθατε στο Ship In Time! Ο κωδικός εισόδου σας είναι ο " + formattedCode;
-        if(languageCode.equals("BG")){
-            message = "Καλώς ήρθατε στο Ship In Time! Ο κωδικός εισόδου σας είναι ο " + formattedCode;
-        } else if("GB"){
-            message = "Καλώς ήρθατε στο Ship In Time! Ο κωδικός εισόδου σας είναι ο " + formattedCode;
-        } else if("AL"){
-            message = "Καλώς ήρθατε στο Ship In Time! Ο κωδικός εισόδου σας είναι ο " + formattedCode;
+        String smsMessage = "Καλώς ήρθατε στο Ship In Time! Ο κωδικός εισόδου σας είναι ο " + formattedCode;
+        if(user.getLanguage().equals("GB")){
+            smsMessage = "Welcome to Ship In Time! Your entry code is " + formattedCode;
+        } else if(user.getLanguage().equals("AL")){
+            smsMessage = "Mirë se erdhët në Ship In Time! Kodi juaj i hyrjes është " + formattedCode;
+        } else if(user.getLanguage().equals("BG")){
+            smsMessage = "Добре дошли в Ship In Time! Вашият входен код е " + formattedCode;
         }
 
         Message message = Message.builder()
-                .text(message)
+                .text(smsMessage)
                 .sender_id("ShipInTime")
                 .build();
 

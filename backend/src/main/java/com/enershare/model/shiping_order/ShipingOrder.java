@@ -63,7 +63,9 @@ public class ShipingOrder extends MainEntity {
     @Column(updatable = false)
     private Instant executionDate;
 
-
     @Column(updatable = false)
     private Integer status;
+
+    @Column(length = 3000)
+    private String  customers;
 }
