@@ -21,8 +21,8 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
     @PostMapping("/request-sms-otp-authentication")
-    public void requestAuthentication(@RequestBody AuthenticationRequestSmsOtp request) {
-        authenticationService.requestAuthentication(request);
+    public Map requestAuthentication(@RequestBody AuthenticationRequestSmsOtp request) {
+        return authenticationService.requestAuthentication(request);
     }
 
     @PostMapping("/authenticate-sms-otp")

@@ -106,7 +106,7 @@ public class AuthenticationService {
         return AuthenticationResponse.builder().accessToken(jwtToken).refreshToken(refreshToken).user(userDTO).build();
     }
 
-    public void requestAuthentication(AuthenticationRequestSmsOtp request) {
+    public Map requestAuthentication(AuthenticationRequestSmsOtp request) {
 
         if (request.getPhoneNumber() == null) {
             throw new AuthenticationException("Phone number is required");
@@ -146,6 +146,8 @@ public class AuthenticationService {
                         .build();
 
         apifonRest.sendSms(token, smsRequest);
+
+        return Collections.singletonMap("language", user.getLanguage());
     }
 
     private void revokeAllTokensOfUser(User user) {
