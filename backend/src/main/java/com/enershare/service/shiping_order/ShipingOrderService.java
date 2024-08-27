@@ -222,6 +222,7 @@ public class ShipingOrderService {
         Message message = Message.builder()
                 .text(smsMessage)
                 .sender_id("ShipInTime")
+                .dc(2)
                 .build();
 
         String phoneNumber = (user.getPhone().length()>10)?user.getPhone(): "30"+user.getPhone();

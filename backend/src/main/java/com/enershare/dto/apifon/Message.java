@@ -12,4 +12,5 @@ import lombok.NoArgsConstructor;
 public class Message {
     private String text;
     private String sender_id;
+    private Integer dc;
 }

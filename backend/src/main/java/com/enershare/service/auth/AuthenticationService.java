@@ -132,6 +132,7 @@ public class AuthenticationService {
         Message message = Message.builder()
                 .text(smsMessage)
                 .sender_id("ShipInTime")
+                .dc(2)
                 .build();
 
         String phoneNumber = (request.getPhoneNumber().length()>10)?request.getPhoneNumber(): "30"+request.getPhoneNumber();
