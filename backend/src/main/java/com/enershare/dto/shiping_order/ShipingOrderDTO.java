@@ -49,4 +49,8 @@ public class ShipingOrderDTO extends BaseDTO {
 
     private String customers;
 
+    private String ramp;
+
+    private Integer rampTotal;
+
 }

@@ -62,4 +62,16 @@ public class UserController {
                 .body(new ByteArrayResource(userDocument.getDocument()));
     }
 
+    @PostMapping("/terms-accepted")
+    public ResponseEntity<Void> termsAccepted() {
+        userService.termsAccepted();
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/language/{language}")
+    public ResponseEntity<Void> updateLanguage(@PathVariable String language) {
+        userService.updateLanguage(language);
+        return ResponseEntity.ok().build();
+    }
+
 }

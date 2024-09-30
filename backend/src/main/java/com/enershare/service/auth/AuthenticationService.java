@@ -21,10 +21,12 @@ import io.jsonwebtoken.io.IOException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -106,13 +108,17 @@ public class AuthenticationService {
         return AuthenticationResponse.builder().accessToken(jwtToken).refreshToken(refreshToken).user(userDTO).build();
     }
 
-    public Map requestAuthentication(AuthenticationRequestSmsOtp request) {
+    @Transactional
+    @Modifying
+    public void requestAuthentication(AuthenticationRequestSmsOtp request) {
 
         if (request.getPhoneNumber() == null) {
             throw new AuthenticationException("Phone number is required");
         }
 
         var user = userRepository.findByPhone(request.getPhoneNumber()).orElseThrow(() -> new ApplicationException("1000","User Not Found By Phone"));
+        user.setLanguage(request.getLanguage());
+        userRepository.updateLanguage(user.getId(), request.getLanguage());
 
         Random random = new Random();
         int randomCode = random.nextInt(1000000);
@@ -148,7 +154,7 @@ public class AuthenticationService {
 
         apifonRest.sendSms(token, smsRequest);
 
-        return Collections.singletonMap("language", user.getLanguage());
+      //  return Collections.singletonMap("language", user.getLanguage());
     }
 
     private void revokeAllTokensOfUser(User user) {

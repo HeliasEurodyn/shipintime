@@ -23,6 +23,10 @@ public interface ShipingOrderRepository extends JpaRepository<ShipingOrder, Stri
     @Query("SELECT s FROM ShipingOrder s WHERE s.shipingDate >= :from AND  s.shipingDate <= :to AND s.ownerId = :owner ORDER BY s.modifiedOn DESC")
     List<ShipingOrder> getOnPeriod(@Param("from") Instant from, @Param("to") Instant to, @Param("owner") String owner);
 
+    @Query("SELECT s FROM ShipingOrder s WHERE s.shipingDate >= :from AND  s.shipingDate <= :to ORDER BY s.modifiedOn DESC")
+    List<ShipingOrder> getAllOnPeriod(@Param("from") Instant from, @Param("to") Instant to);
+
+
     @Query("SELECT s.s1id FROM ShipingOrder s WHERE s.s1id IN :s1IdList")
     List<String> findExistingS1Ids(List<String> s1IdList);
 

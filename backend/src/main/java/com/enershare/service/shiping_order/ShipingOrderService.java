@@ -4,6 +4,7 @@ import com.enershare.dto.apifon.Message;
 import com.enershare.dto.apifon.SmsRequest;
 import com.enershare.dto.apifon.Subscriber;
 import com.enershare.dto.shiping_order.ShipingOrderDTO;
+import com.enershare.dto.shiping_order.ShipingOrderLoadDTO;
 import com.enershare.exception.ApplicationException;
 import com.enershare.mapper.shiping_order.ShipingOrderMapper;
 import com.enershare.model.shiping_order.ShipingOrder;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -84,6 +86,29 @@ public class ShipingOrderService {
         List<ShipingOrder> list = shipingOrderRepository.getOnPeriod(from, to, jwtService.getUserId());
         return shipingOrderMapper.map(list);
     }
+
+    public List<ShipingOrderDTO> getAllOnPeriod(Instant from, Instant to) {
+        List<ShipingOrder> list = shipingOrderRepository.getAllOnPeriod(from, to);
+        List<ShipingOrderDTO> dtos = shipingOrderMapper.map(list);
+
+        dtos.sort(
+                Comparator.comparing(ShipingOrderDTO::isLoading)
+                        .reversed()
+                        .thenComparing(
+                                Comparator.comparing(ShipingOrderDTO::getLoadingDate, Comparator.nullsLast(Comparator.naturalOrder()))
+                        )
+                        .thenComparing(ShipingOrderDTO::isCheckedIn)
+                        .reversed()
+                        .thenComparing(
+                                Comparator.comparing(ShipingOrderDTO::getCheckedInDate, Comparator.nullsLast(Comparator.naturalOrder()))
+                        )
+        );
+
+        return dtos;
+
+    }
+
+
 
     @Transactional
     @Modifying
@@ -202,21 +227,59 @@ public class ShipingOrderService {
 
     @Transactional
     @Modifying
-    public void load(String id) {
-        this.shipingOrderRepository.load(id);
+    public void load(ShipingOrderLoadDTO shipingOrdersDTO) {
+        this.shipingOrderRepository.load(shipingOrdersDTO.getId());
 
-        ShipingOrder shipingOrder = this.shipingOrderRepository.findById(id).orElseThrow(() -> new ApplicationException("2000","Order Not Found By Id"));
+        ShipingOrder shipingOrder = this.shipingOrderRepository.findById(shipingOrdersDTO.getId()).orElseThrow(() -> new ApplicationException("2000","Order Not Found By Id"));
         User user = this.userRepository.findById(shipingOrder.getOwnerId()) .orElseThrow(() -> new ApplicationException("1001","User Not Found By Id"));
 
         String token = apifonRest.auth();
 
-        String smsMessage = "Η παραγγελία σας με αριθμό "+ shipingOrder.getS1Number() +" είναι έτοιμη προς φόρτωση, σας αναμένουμε στην ράμπα φόρτωσης σε 10 λεπτά";
-        if(user.getLanguage().equals("GB")){
-            smsMessage = "Your order with number "+ shipingOrder.getS1Number() +" is ready for loading, we are expecting you at the loading ramp in 10 minutes.";
-        } else if(user.getLanguage().equals("AL")){
-            smsMessage = "Porosia juaj me numër "+ shipingOrder.getS1Number() +" është gati për ngarkim, ju presim te rampa e ngarkimit pas 10 minutash.";
-        } else if(user.getLanguage().equals("BG")){
-            smsMessage =  "Вашата поръчка с номер "+ shipingOrder.getS1Number() +" е готова за товарене, очакваме ви на рампата за товарене след 10 минути.";
+
+        String smsMessage;
+        int rampsCount = shipingOrdersDTO.getRampTotal(); // Assuming getRamp() returns a list or count of ramps
+
+
+        if (rampsCount > 1) {
+            smsMessage = "Η παραγγελία σας με αριθμό " + shipingOrder.getS1Number() +
+                    " είναι έτοιμη προς φόρτωση, σας αναμένουμε στις ράμπες φόρτωσης " +
+                    shipingOrdersDTO.getRamp() + " σε " + shipingOrdersDTO.getShipInMinutes() + " λεπτά.";
+        } else {
+            smsMessage = "Η παραγγελία σας με αριθμό " + shipingOrder.getS1Number() +
+                    " είναι έτοιμη προς φόρτωση, σας αναμένουμε στη ράμπα φόρτωσης " +
+                    shipingOrdersDTO.getRamp() + " σε " + shipingOrdersDTO.getShipInMinutes() + " λεπτά.";
+        }
+
+        if (user.getLanguage().equals("GB")) {
+            if (rampsCount > 1) {
+                smsMessage = "Your order with number " + shipingOrder.getS1Number() +
+                        " is ready for loading, we are expecting you at the loading ramps " +
+                        shipingOrdersDTO.getRamp() + " in " + shipingOrdersDTO.getShipInMinutes() + " minutes.";
+            } else {
+                smsMessage = "Your order with number " + shipingOrder.getS1Number() +
+                        " is ready for loading, we are expecting you at the loading ramp " +
+                        shipingOrdersDTO.getRamp() + " in " + shipingOrdersDTO.getShipInMinutes() + " minutes.";
+            }
+        } else if (user.getLanguage().equals("AL")) {
+            if (rampsCount > 1) {
+                smsMessage = "Porosia juaj me numër " + shipingOrder.getS1Number() +
+                        " është gati për ngarkim, ju presim te rampat e ngarkimit " +
+                        shipingOrdersDTO.getRamp() + " pas " + shipingOrdersDTO.getShipInMinutes() + " minutash.";
+            } else {
+                smsMessage = "Porosia juaj me numër " + shipingOrder.getS1Number() +
+                        " është gati për ngarkim, ju presim te rampa e ngarkimit " +
+                        shipingOrdersDTO.getRamp() + " pas " + shipingOrdersDTO.getShipInMinutes() + " minutash.";
+            }
+        } else if (user.getLanguage().equals("BG")) {
+            if (rampsCount > 1) {
+                smsMessage = "Вашата поръчка с номер " + shipingOrder.getS1Number() +
+                        " е готова за товарене, очакваме ви на рампите за товарене " +
+                        shipingOrdersDTO.getRamp() + " след " + shipingOrdersDTO.getShipInMinutes() + " минути.";
+            } else {
+                smsMessage = "Вашата поръчка с номер " + shipingOrder.getS1Number() +
+                        " е готова за товарене, очакваме ви на рампата за товарене " +
+                        shipingOrdersDTO.getRamp() + " след " + shipingOrdersDTO.getShipInMinutes() + " минути.";
+            }
         }
 
         Message message = Message.builder()

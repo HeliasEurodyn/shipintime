@@ -68,4 +68,10 @@ public class ShipingOrder extends MainEntity {
 
     @Column(length = 3000)
     private String  customers;
+
+    @Column
+    private String ramp;
+
+    @Column
+    private Integer rampTotal;
 }

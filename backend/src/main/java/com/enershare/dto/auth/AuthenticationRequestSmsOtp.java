@@ -15,4 +15,6 @@ public class AuthenticationRequestSmsOtp {
 
     private String logincode;
 
+    private String language;
+
 }

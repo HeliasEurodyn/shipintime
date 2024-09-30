@@ -46,10 +46,14 @@ public class User implements UserDetails {
     @Column(updatable = false)
     private Instant loginRequestDate;
 
+    @Column( updatable = false)
     private String language;
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @Column(updatable = false)
+    private boolean termsAccepted;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

@@ -40,4 +40,13 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query("SELECT u.s1Id FROM User u WHERE u.s1Id IN :s1IdList")
     List<String> findExistingS1Ids(List<String> s1IdList);
 
+    @Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @Query("UPDATE User SET termsAccepted = true WHERE id = :userId")
+    void setTermsAccepetd(@Param("userId") String userId);
+
+    @Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @Query("UPDATE User SET language = :language WHERE id = :userId")
+    void updateLanguage(@Param("userId") String userId, @Param("language") String language);
 }

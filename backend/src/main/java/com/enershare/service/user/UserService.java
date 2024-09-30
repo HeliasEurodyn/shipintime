@@ -203,6 +203,19 @@ public class UserService {
         return userDocumentRepository.findById(id).orElseThrow(() -> new ApplicationException("0","Document Not Found By Id"));
     }
 
+    @Transactional
+    @Modifying
+    public void termsAccepted() {
+        String userId = jwtService.getUserId();
+        this.userRepository.setTermsAccepetd(userId);
+    }
+
+    @Transactional
+    @Modifying
+    public void updateLanguage(String language) {
+        String userId = jwtService.getUserId();
+        this.userRepository.updateLanguage(userId, language);
+    }
 }
 
 

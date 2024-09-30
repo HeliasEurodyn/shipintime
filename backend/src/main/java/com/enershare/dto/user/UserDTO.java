@@ -37,6 +37,8 @@ public class UserDTO extends BaseDTO {
 
     private String language;
 
+    private boolean termsAccepted;
+
     public UserDTO(String id, String username, String firstname, String lastname, String email,  String phone, Role role) {
         this.setId(id);
         this.username = username;

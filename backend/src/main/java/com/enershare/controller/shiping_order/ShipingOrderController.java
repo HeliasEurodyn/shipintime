@@ -1,6 +1,7 @@
 package com.enershare.controller.shiping_order;
 
 import com.enershare.dto.shiping_order.ShipingOrderDTO;
+import com.enershare.dto.shiping_order.ShipingOrderLoadDTO;
 import com.enershare.service.shiping_order.ShipingOrderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,20 +33,16 @@ public class ShipingOrderController {
         return shipingOrderService.getOnPeriod(from, to);
     }
 
+    @GetMapping(path = "/all/period")
+    List<ShipingOrderDTO> getAllOnPeriod(@RequestParam("from") Instant from,
+                                      @RequestParam("to") Instant to) {
+        return shipingOrderService.getAllOnPeriod(from, to);
+    }
+
     @GetMapping(path = "/by-id")
     ShipingOrderDTO getObject(@RequestParam("id") String id) throws Exception {
         return shipingOrderService.getObject(id);
     }
-
-//    @PostMapping
-//    public ShipingOrderDTO postObject(@RequestBody ShipingOrderDTO shipingOrderDTO) {
-//        return shipingOrderService.postObject(shipingOrderDTO);
-//    }
-//
-//    @PutMapping
-//    public ShipingOrderDTO putObject(@RequestBody ShipingOrderDTO shipingOrderDTO) {
-//        return shipingOrderService.postObject(shipingOrderDTO);
-//    }
 
     @DeleteMapping
     public void deleteObject(@RequestParam("id") String id) throws Exception {
@@ -68,8 +65,8 @@ public class ShipingOrderController {
     }
 
     @PostMapping(path = "/load")
-    public void load(@RequestBody Map<String, String> parameters) {
-        shipingOrderService.load(parameters.get("id"));
+    public void load(@RequestBody ShipingOrderLoadDTO shipingOrdersDTO) {
+        shipingOrderService.load(shipingOrdersDTO);
     }
 
     @PostMapping(path = "/su/check-in")
@@ -91,4 +88,15 @@ public class ShipingOrderController {
     public void reset(@RequestBody Map<String, String> parameters) {
         shipingOrderService.reset(parameters.get("id"));
     }
+
+//    @PostMapping
+//    public ShipingOrderDTO postObject(@RequestBody ShipingOrderDTO shipingOrderDTO) {
+//        return shipingOrderService.postObject(shipingOrderDTO);
+//    }
+//
+//    @PutMapping
+//    public ShipingOrderDTO putObject(@RequestBody ShipingOrderDTO shipingOrderDTO) {
+//        return shipingOrderService.postObject(shipingOrderDTO);
+//    }
+
 }
