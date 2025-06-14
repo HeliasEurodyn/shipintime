@@ -46,7 +46,7 @@ public class AuthenticationController {
     }
 
     @GetMapping("/check-token")
-    public Map checkToken() throws IOException, java.io.IOException {
+    public Map checkToken() throws IOException {
         return authenticationService.checkToken();
     }
 

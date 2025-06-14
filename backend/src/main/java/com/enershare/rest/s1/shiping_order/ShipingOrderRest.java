@@ -1,4 +1,4 @@
-package com.enershare.rest.s1;
+package com.enershare.rest.s1.shiping_order;
 
 import com.enershare.dto.apifon.TokenResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -70,7 +70,10 @@ public class ShipingOrderRest {
 
         Map<String, String> body = new HashMap<>();
         body.put("FINDOC", id);
-        body.put("clientID", clientId);
+
+        if(!clientId.equals("")){
+            body.put("clientID", clientId);
+        }
 
         String requestBody = mapper.writeValueAsString(body);
 
@@ -82,7 +85,6 @@ public class ShipingOrderRest {
 
         if (response.getStatusCode() == HttpStatus.OK) {
             String responseString = response.getBody();
-          //  Map responseMap = mapper.readValue(responseString, Map.class);
         }
 
     }

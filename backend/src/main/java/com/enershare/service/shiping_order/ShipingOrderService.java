@@ -3,8 +3,10 @@ package com.enershare.service.shiping_order;
 import com.enershare.dto.apifon.Message;
 import com.enershare.dto.apifon.SmsRequest;
 import com.enershare.dto.apifon.Subscriber;
+import com.enershare.dto.shiping_order.CameraTrackDTO;
 import com.enershare.dto.shiping_order.ShipingOrderDTO;
 import com.enershare.dto.shiping_order.ShipingOrderLoadDTO;
+import com.enershare.dto.user.UserDTO;
 import com.enershare.exception.ApplicationException;
 import com.enershare.mapper.shiping_order.ShipingOrderMapper;
 import com.enershare.model.shiping_order.ShipingOrder;
@@ -12,8 +14,11 @@ import com.enershare.model.user.User;
 import com.enershare.repository.shiping_order.ShipingOrderRepository;
 import com.enershare.repository.user.UserRepository;
 import com.enershare.rest.apifon.ApifonRest;
-import com.enershare.rest.s1.ShipingOrderRest;
+import com.enershare.rest.s1.shiping_order.ShipingOrderRest;
 import com.enershare.service.auth.JwtService;
+import com.enershare.service.camera_track.CameraTrackService;
+import com.enershare.service.user.UserService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,9 +28,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,6 +42,9 @@ public class ShipingOrderService {
 
     @Autowired
     private ShipingOrderRepository shipingOrderRepository;
+
+    @Autowired
+    private UserService userService;
 
     @Autowired
     private UserRepository userRepository;
@@ -51,6 +60,10 @@ public class ShipingOrderService {
 
     @Autowired
     private ApifonRest apifonRest;
+
+
+    @Autowired
+    private CameraTrackService cameraTrackService;
 
     public List<ShipingOrderDTO> getObject() {
         List<ShipingOrder> list = shipingOrderRepository.findAll();
@@ -104,8 +117,27 @@ public class ShipingOrderService {
                         )
         );
 
-        return dtos;
+        List<String> uniqueOwnerIds = dtos.stream()
+                .map(ShipingOrderDTO::getOwnerId)
+                .distinct()
+                .collect(Collectors.toSet())
+                .stream()
+                .collect(Collectors.toList());
 
+        List<UserDTO> users =  this.userService.findByIds(uniqueOwnerIds);
+
+        Map<String, UserDTO> userMap = users.stream()
+                .collect(Collectors.toMap(UserDTO::getId, user -> user)); // Map<ownerId, User>
+
+
+        dtos.forEach(dto -> {
+            UserDTO user = userMap.get(dto.getOwnerId());
+            if (user != null) {
+                dto.setUser(user); // Assuming you have a `setUser` method in ShipingOrderDTO
+            }
+        });
+
+        return dtos;
     }
 
 
@@ -203,6 +235,105 @@ public class ShipingOrderService {
 
     @Transactional
     @Modifying
+    public void checkInByCameraTrack(List<CameraTrackDTO> cameraTracks) throws JsonProcessingException {
+
+        cameraTrackService.registerTracks(cameraTracks);
+
+        List<Map<String, String>> results = this.findShipingOrdersByPlates(cameraTracks);
+
+        for (Map<String, String> result : results) {
+            this.shipingOrderRepository.suCheckIn(result.get("id"));
+            this.shipingOrderRest.checkIn(result.get("s1id"), "");
+        }
+
+        List<Map<String, String>> resultsWithPhone = results.stream()
+                .filter(r -> r.get("phone") != null && !r.get("phone").isBlank())
+                .collect(Collectors.toList());
+
+        for (Map<String, String> result : resultsWithPhone) {
+
+            String token = apifonRest.auth();
+            String smsMessage = "Καλώς ήρθατε στην AgroHellas! Ο κωδικός παραλαβής παραγγελιών σας είναι ο " + result.get("s1id");
+
+            if(result.get("language").equals("GB")){
+                smsMessage = "Welcome to AgroHellas! Your order pickup code is " + result.get("s1id");
+            } else if(result.get("language").equals("AL")){
+                smsMessage = "Mirë se erdhët në AgroHellas! Kodi juaj i tërheqjes së porosisë është " + result.get("s1id");
+            } else if(result.get("language").equals("BG")){
+                smsMessage = "Добре дошли в AgroHellas! Вашият код за получаване на поръчката е " + result.get("s1id");
+            } else if(result.get("language").equals("NMC")) { // Added Macedonian language support
+                smsMessage = "Добредојдовте во AgroHellas! Вашиот код за подигање на нарачката е " + result.get("s1id");
+            }
+
+            Message message = Message.builder()
+                    .text(smsMessage)
+                    .sender_id("ShipInTime")
+                    .dc(2)
+                    .build();
+
+            String phoneNumber = result.get("phone");
+            String prefix = User.getPrefixNumberByCode(result.get("phone_prefix"));
+
+            Subscriber subscriber = Subscriber.builder()
+                    .number(prefix + phoneNumber)
+                    .build();
+
+            SmsRequest smsRequest =
+                    SmsRequest.builder()
+                            .message(message)
+                            .subscribers(new Subscriber[]{subscriber})
+                            .build();
+
+            apifonRest.sendSms(token, smsRequest);
+        }
+    }
+
+    public  List<Map<String, String>> findShipingOrdersByPlates(List<CameraTrackDTO> cameraTracks) {
+        if (cameraTracks == null || cameraTracks.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                .withZone(ZoneId.of("UTC"));
+
+        List<String> whereParts = new ArrayList<>();
+
+        for (CameraTrackDTO cameraTrack : cameraTracks) {
+            String formattedDate = dateFormatter.format(cameraTrack.getTracktime()); // Extract only the date
+
+            String where = "( s.truck = '" + cameraTrack.getPlate() + "' " +
+                    "AND DATE(s.shiping_date) = '" + formattedDate + "' " +
+                    "AND s.checked_in = 0)";
+
+            whereParts.add(where);
+        }
+
+        // Construct the full query safely
+        String queryStr = " SELECT s.id, s.s1id, ifnull(u.language,'') AS language, ifnull(u.phone,'') AS phone, ifnull(u.phone_prefix,'') AS phone_prefix FROM shiping_order s "+
+                          " LEFT OUTER JOIN user u ON u.id = s.owner_id WHERE " + String.join(" OR ", whereParts);
+        Query query = entityManager.createNativeQuery(queryStr);
+
+        List<Object[]> results = query.getResultList();
+
+        // Convert results to List of Maps
+        List<Map<String, String>> orderList = new ArrayList<>();
+
+        for (Object[] row : results) {
+            Map<String, String> orderData = new HashMap<>();
+            orderData.put("id", row[0].toString());
+            orderData.put("s1id", row[1].toString());
+            orderData.put("language", row[2].toString());
+            orderData.put("phone", row[3] != null ? row[3].toString() : ""); // Handle potential null values
+            orderData.put("phone_prefix", row[4] != null ? row[4].toString() : "");
+
+            orderList.add(orderData);
+        }
+
+        return orderList;
+    }
+
+    @Transactional
+    @Modifying
     public void suCheckIn(String id) {
         this.shipingOrderRepository.suCheckIn(id);
     }
@@ -228,7 +359,7 @@ public class ShipingOrderService {
     @Transactional
     @Modifying
     public void load(ShipingOrderLoadDTO shipingOrdersDTO) {
-        this.shipingOrderRepository.load(shipingOrdersDTO.getId());
+        this.shipingOrderRepository.loadWithRamp(shipingOrdersDTO.getId(),shipingOrdersDTO.getRamp(),shipingOrdersDTO.getRampTotal());
 
         ShipingOrder shipingOrder = this.shipingOrderRepository.findById(shipingOrdersDTO.getId()).orElseThrow(() -> new ApplicationException("2000","Order Not Found By Id"));
         User user = this.userRepository.findById(shipingOrder.getOwnerId()) .orElseThrow(() -> new ApplicationException("1001","User Not Found By Id"));
@@ -280,18 +411,28 @@ public class ShipingOrderService {
                         " е готова за товарене, очакваме ви на рампата за товарене " +
                         shipingOrdersDTO.getRamp() + " след " + shipingOrdersDTO.getShipInMinutes() + " минути.";
             }
+        } else if (user.getLanguage().equals("NMC")) {
+            if (rampsCount > 1) {
+                smsMessage = "Вашата нарачка со број " + shipingOrder.getS1Number() +
+                        " е подготвена за вчитување, ве очекуваме на рампите за вчитување " +
+                        shipingOrdersDTO.getRamp() + " за " + shipingOrdersDTO.getShipInMinutes() + " минути.";
+            } else {
+                smsMessage = "Вашата нарачка со број " + shipingOrder.getS1Number() +
+                        " е подготвена за вчитување, ве очекуваме на рампата за вчитување " +
+                        shipingOrdersDTO.getRamp() + " за " + shipingOrdersDTO.getShipInMinutes() + " минути.";
+            }
         }
-
         Message message = Message.builder()
                 .text(smsMessage)
                 .sender_id("ShipInTime")
                 .dc(2)
                 .build();
 
-        String phoneNumber = (user.getPhone().length()>10)?user.getPhone(): "30"+user.getPhone();
-//        String phoneNumber =  "306993649230";
+        String phoneNumber = user.getPhone(); // String phoneNumber = (user.getPhone().length()>10)?user.getPhone(): "30"+user.getPhone();
+        String prefix = User.getPrefixNumberByCode(user.getPhonePrefix());
+
         Subscriber subscriber = Subscriber.builder()
-                .number(phoneNumber)
+                .number(prefix + phoneNumber)
                 .build();
 
         SmsRequest smsRequest =
@@ -302,6 +443,76 @@ public class ShipingOrderService {
 
         apifonRest.sendSms(token, smsRequest);
     }
+
+    @Transactional
+    @Modifying
+    public void creationNotify(String id) {
+
+        ShipingOrder shipingOrder = this.shipingOrderRepository.findById(id).orElseThrow(() -> new ApplicationException("2000","Order Not Found By Id"));
+        User user = this.userRepository.findById(shipingOrder.getOwnerId()) .orElseThrow(() -> new ApplicationException("1001","User Not Found By Id"));
+
+        String token = apifonRest.auth();
+
+        String smsMessage;
+
+        LocalDate shippingDate = shipingOrder.getShipingDate().atZone(ZoneId.systemDefault()).toLocalDate();
+
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        String formattedDate = shippingDate.format(dateFormatter);
+
+        DateTimeFormatter dateFormatter2 = DateTimeFormatter.ofPattern("ddMMyyyy");
+        String formattedDate2 = shippingDate.format(dateFormatter2);
+
+        smsMessage = "Η αποστολή με αριθμό " + shipingOrder.getS1Number() + " " +
+                "έχει δρομολογηθεί για " + formattedDate + ". " +
+                "Κατά την άφιξη σας επισκεφθείτε το link https://shipintime.gr/order-date/" + formattedDate2 ;
+
+        if (user.getLanguage().equals("GB")) {
+
+            smsMessage = "Your order with number " + shipingOrder.getS1Number() +
+                    " has been scheduled for " +  formattedDate + ". " +
+                    "Upon your arrival, please check in https://shipintime.gr/order-date/" + formattedDate2 ;
+
+        } else if (user.getLanguage().equals("AL")) {
+
+            smsMessage = "Porosia juaj me numër " + shipingOrder.getS1Number() +
+                    " është planifikuar për " + formattedDate + ". " +
+                    "Me mbërritjen tuaj, ju lutemi kontrolloni https://shipintime.gr/order-date/" + formattedDate2 ;
+
+        } else if (user.getLanguage().equals("BG")) {
+
+            smsMessage = "Вашата поръчка с номер " + shipingOrder.getS1Number() +
+                    " е насрочена за " + formattedDate + ". " +
+                    "При пристигането ви, моля, проверете https://shipintime.gr/order-date/" + formattedDate2 +" тук.";
+
+        } else if (user.getLanguage().equals("NMC")) { // Added Macedonian language support
+            smsMessage = "Вашата нарачка со број " + shipingOrder.getS1Number() +
+                    " е закажана за " + formattedDate + ". " +
+                    "При вашето пристигнување, ве молиме проверете https://shipintime.gr/order-date/" + formattedDate2 +" тука.";
+        }
+
+        Message message = Message.builder()
+                .text(smsMessage)
+                .sender_id("ShipInTime")
+                .dc(2)
+                .build();
+
+        String phoneNumber = user.getPhone(); //String phoneNumber = (user.getPhone().length()>10)?user.getPhone(): "30"+user.getPhone();
+        String prefix = User.getPrefixNumberByCode(user.getPhonePrefix());
+
+        Subscriber subscriber = Subscriber.builder()
+                .number(prefix + phoneNumber)
+                .build();
+
+        SmsRequest smsRequest =
+                SmsRequest.builder()
+                        .message(message)
+                        .subscribers(new Subscriber[]{subscriber})
+                        .build();
+
+        apifonRest.sendSms(token, smsRequest);
+    }
+
 
 
 }

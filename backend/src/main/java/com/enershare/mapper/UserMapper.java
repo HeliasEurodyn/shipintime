@@ -17,7 +17,12 @@ public abstract class UserMapper {
 
     public abstract UserDTO map(User user);
 
+    public abstract List<UserDTO> maplist(List<User> user);
+
     public abstract List<User> map(List<UserDTO> user);
+
+    @Mapping(source = "active", target = "isActive")
+    public abstract User map(UserDTO user);
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "email", source = "email")

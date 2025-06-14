@@ -53,7 +53,7 @@ public class AuthenticationService {
             throw new AuthenticationException("Phone number and logincode are required");
         }
 
-        var user = userRepository.findByPhone(request.getPhoneNumber()).orElseThrow(() -> new ApplicationException("1000","User Not Found By Phone"));
+        var user = userRepository.findFirstByPhoneAndIsActiveAndPhonePrefix(request.getPhoneNumber(), true, request.getPrefix()).orElseThrow(() -> new ApplicationException("1000","User Not Found By Phone"));
 
         Instant loginRequestDate = user.getLoginRequestDate();
         Instant now = Instant.now();
@@ -97,7 +97,7 @@ public class AuthenticationService {
             throw new AuthenticationException("Username and password are required");
         }
 
-        var user = userRepository.findByUsername(request.getUsername()).orElseThrow(() -> new ApplicationException("1002","User Not Found By Username"));
+        var user = userRepository.findByUsernameAndIsActive(request.getUsername(), true).orElseThrow(() -> new ApplicationException("1002","User Not Found By Username"));
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
         var jwtToken = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
@@ -116,7 +116,10 @@ public class AuthenticationService {
             throw new AuthenticationException("Phone number is required");
         }
 
-        var user = userRepository.findByPhone(request.getPhoneNumber()).orElseThrow(() -> new ApplicationException("1000","User Not Found By Phone"));
+        if (request.getPrefix() == null) {
+            throw new AuthenticationException("Phone Prefix is required");
+        }
+        var user = userRepository.findFirstByPhoneAndIsActiveAndPhonePrefix(request.getPhoneNumber(), true, request.getPrefix()).orElseThrow(() -> new ApplicationException("1000","User Not Found By Phone"));
         user.setLanguage(request.getLanguage());
         userRepository.updateLanguage(user.getId(), request.getLanguage());
 
@@ -133,6 +136,8 @@ public class AuthenticationService {
             smsMessage = "Mirë se erdhët në Ship In Time! Kodi juaj i hyrjes është " + formattedCode;
         } else if(user.getLanguage().equals("BG")){
             smsMessage = "Добре дошли в Ship In Time! Вашият входен код е " + formattedCode;
+        } else if(user.getLanguage().equals("NMC")) { // Added Macedonian language support
+            smsMessage = "Добредојдовте во Ship In Time! Вашиот код за влез е " + formattedCode;
         }
 
         Message message = Message.builder()
@@ -141,9 +146,11 @@ public class AuthenticationService {
                 .dc(2)
                 .build();
 
-        String phoneNumber = (request.getPhoneNumber().length()>10)?request.getPhoneNumber(): "30"+request.getPhoneNumber();
+        String phoneNumber = request.getPhoneNumber(); // (request.getPhoneNumber().length()>10)?request.getPhoneNumber(): "30"+request.getPhoneNumber();
+        String prefix = User.getPrefixNumberByCode(user.getPhonePrefix());
+
         Subscriber subscriber = Subscriber.builder()
-                .number(phoneNumber)
+                .number(prefix + phoneNumber)
                 .build();
 
         SmsRequest smsRequest =

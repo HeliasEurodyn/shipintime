@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,6 +48,15 @@ public interface ShipingOrderRepository extends JpaRepository<ShipingOrder, Stri
 
     @Modifying
     @Transactional
+    @Query("UPDATE ShipingOrder SET loading = true, " +
+            "loadingDate = CURRENT_TIMESTAMP, " +
+            "ramp = :ramp, " +
+            "rampTotal = :ramptotal, " +
+            "status = 2 WHERE id = :id")
+    void loadWithRamp(@Param("id") String id, @Param("ramp") String ramp, @Param("ramptotal") Integer ramptotal);
+
+    @Modifying
+    @Transactional
     @Query("UPDATE ShipingOrder SET executed = true, executionDate = CURRENT_TIMESTAMP, status = 3 WHERE id = :id")
     void execute(@Param("id") String id);
 
@@ -54,4 +64,8 @@ public interface ShipingOrderRepository extends JpaRepository<ShipingOrder, Stri
     @Transactional
     @Query("UPDATE ShipingOrder SET executed = false, loading = false, checkedIn = false, status = 0 WHERE id = :id")
     void reset(@Param("id") String id);
+
+    @Query("SELECT s.s1id FROM ShipingOrder s WHERE s.truck IN :plates AND s.checkedIn = false AND FUNCTION('DATE', s.shipingDate) = :today")
+    List<String> findShipingOrdersByPlates(List<String> plates, @Param("today") LocalDate today);
+
 }

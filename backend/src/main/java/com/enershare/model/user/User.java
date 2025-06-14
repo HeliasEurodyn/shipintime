@@ -49,11 +49,16 @@ public class User implements UserDetails {
     @Column( updatable = false)
     private String language;
 
+    @Column
+    private String phonePrefix;
+
     @Enumerated(EnumType.STRING)
     private Role role;
 
     @Column(updatable = false)
     private boolean termsAccepted;
+
+    private boolean isActive;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -97,6 +102,15 @@ public class User implements UserDetails {
         if (id == null) {
             id = UUID.randomUUID().toString();
         }
+    }
+
+    public static String getPrefixNumberByCode(String code){
+        if(code.equals("GB")) return "0044";
+        if(code.equals("EL")) return "0030";
+        if(code.equals("AL")) return "00355";
+        if(code.equals("BG")) return "00359";
+        if(code.equals("NMC")) return "00389";
+        return "0030";
     }
 
 }

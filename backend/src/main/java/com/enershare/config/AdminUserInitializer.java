@@ -24,7 +24,9 @@ public class AdminUserInitializer implements ApplicationRunner {
             adminUserDTO.setLastname("admin");
             adminUserDTO.setEmail("admin");
             adminUserDTO.setPassword("admin");
+            adminUserDTO.setUsername("admin");
             adminUserDTO.setRole(Role.ADMIN);
+            adminUserDTO.setActive(true);
             userService.createUser(adminUserDTO);
         }
     }

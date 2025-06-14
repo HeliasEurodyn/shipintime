@@ -1,8 +1,10 @@
 package com.enershare.controller.shiping_order;
 
+import com.enershare.dto.shiping_order.CameraTrackDTO;
 import com.enershare.dto.shiping_order.ShipingOrderDTO;
 import com.enershare.dto.shiping_order.ShipingOrderLoadDTO;
 import com.enershare.service.shiping_order.ShipingOrderService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -59,9 +61,19 @@ public class ShipingOrderController {
         shipingOrderService.syncForce(shipingOrdersDTO);
     }
 
+    @PostMapping(path = "/creation-notify")
+    public void creationNotify(@RequestBody Map<String, String> parameters) {
+        shipingOrderService.creationNotify(parameters.get("id"));
+    }
+
     @PostMapping(path = "/check-in")
     public void checkIn(@RequestBody Map<String, String> parameters) throws IOException {
         shipingOrderService.checkIn(parameters.get("id"));
+    }
+
+    @PostMapping(path = "/check-in/by-camera-tracks")
+    public void checkInByPlates(@RequestBody List<CameraTrackDTO> cameraTracks) throws JsonProcessingException {
+        shipingOrderService.checkInByCameraTrack(cameraTracks);
     }
 
     @PostMapping(path = "/load")

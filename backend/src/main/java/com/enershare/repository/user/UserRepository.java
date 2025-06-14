@@ -19,18 +19,24 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     Optional<User> findByEmail(String email);
 
-    Optional<User> findByUsername(String username);
+//    Optional<User> findByUsername(String username);
 
-    Optional<User> findByPhone(String username);
+    Optional<User> findByUsernameAndIsActive(String username, boolean isActive);
 
-    @Query("SELECT u FROM User u WHERE u.username = :name OR u.phone = :name")
+//    Optional<User> findFirstByPhone(String username);
+
+    Optional<User> findFirstByPhoneAndIsActiveAndPhonePrefix(String username, boolean isActive, String prefix);
+    @Query("SELECT u FROM User u WHERE u.username = :name OR u.phone = :name AND u.isActive = true")
     Optional<User> findByUsernameOrPhone(String name);
 
     @Query("SELECT new com.enershare.dto.user.UserDTO(u.id, u.username, u.firstname, u.lastname, u.email, u.phone, u.role) FROM User u ")
     Page<UserDTO> getUsers(Pageable pageable);
 
     @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u WHERE u.email = :email")
-    boolean existsByEmail(String email);
+    boolean existsByEmail(@Param("email") String email);
+
+    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u WHERE u.username = :username")
+    boolean existsByUsername(@Param("username") String username);
 
     @Transactional
     @Modifying
@@ -49,4 +55,8 @@ public interface UserRepository extends JpaRepository<User, String> {
     @org.springframework.transaction.annotation.Transactional
     @Query("UPDATE User SET language = :language WHERE id = :userId")
     void updateLanguage(@Param("userId") String userId, @Param("language") String language);
+
+
+    @Query("SELECT u FROM User u WHERE u.id IN :ids")
+    List<User> findByIds(@Param("ids") List<String> ids);
 }

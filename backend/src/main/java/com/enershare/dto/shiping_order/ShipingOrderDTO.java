@@ -1,6 +1,7 @@
 package com.enershare.dto.shiping_order;
 
 import com.enershare.dto.base.BaseDTO;
+import com.enershare.dto.user.UserDTO;
 import com.enershare.model.base.MainEntity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Column;
@@ -52,5 +53,7 @@ public class ShipingOrderDTO extends BaseDTO {
     private String ramp;
 
     private Integer rampTotal;
+
+    private UserDTO user;
 
 }

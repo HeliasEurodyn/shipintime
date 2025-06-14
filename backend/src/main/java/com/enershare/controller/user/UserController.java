@@ -41,6 +41,7 @@ public class UserController {
     public Map document(@RequestParam("file") MultipartFile file, @RequestParam("type") String type) throws IOException {
             return userService.saveDocument(file, type);
     }
+
     @GetMapping("/documents")
     public List<UserDocumentDTO> documents() {
             return userService.getDocuments();

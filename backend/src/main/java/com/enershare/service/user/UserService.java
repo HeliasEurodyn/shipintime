@@ -58,10 +58,6 @@ public class UserService {
         return userRepository.count();
     }
 
-    public Page<UserDTO> getUsers(int page, int size) {
-        return userRepository.getUsers(PageRequest.of(page, size));
-    }
-
     public UserDTO getObject(String id) {
         User user = userRepository.findById(id)
                 .orElseThrow();
@@ -88,42 +84,48 @@ public class UserService {
                 .email(userDTO.getEmail())
                 .password(passwordEncoder.encode(userDTO.getPassword()))
                 .role(userDTO.getRole())
+                .isActive(userDTO.isActive())
                 .build();
 
         userRepository.save(user);
     }
 
-    public void updateUser(@RequestBody UserDTO userDTO) {
-        Optional<User> optionalUser = userRepository.findById(userDTO.getId());
-        User existingUser = optionalUser.orElseThrow(() -> new ApplicationException("1001","User Not Found By Id"));
-
-        String newEmail = userDTO.getEmail();
-        if (!existingUser.getEmail().equals(newEmail)) {
-            Optional<User> userWithNewEmail = userRepository.findByEmail(newEmail);
-            if (userWithNewEmail.isPresent() && !userWithNewEmail.get().equals(existingUser)) {
-                throw new EmailAlreadyExistsException("Email already exists");
-            }
-        }
-
-        existingUser.setEmail(userDTO.getEmail());
-        existingUser.setFirstname(userDTO.getFirstname());
-        existingUser.setLastname(userDTO.getLastname());
-        existingUser.setRole(userDTO.getRole());
-
-        if (userDTO.getPassword() != null && !userDTO.getPassword().isEmpty()) {
-            String hashedPassword = passwordEncoder.encode(userDTO.getPassword());
-            existingUser.setPassword(hashedPassword);
-        }
-
-        userRepository.save(existingUser);
-    }
+//    public void updateUser(@RequestBody UserDTO userDTO) {
+//        Optional<User> optionalUser = userRepository.findById(userDTO.getId());
+//        User existingUser = optionalUser.orElseThrow(() -> new ApplicationException("1001","User Not Found By Id"));
+//
+//        String newEmail = userDTO.getEmail();
+//        if (!existingUser.getEmail().equals(newEmail)) {
+//            Optional<User> userWithNewEmail = userRepository.findByEmail(newEmail);
+//            if (userWithNewEmail.isPresent() && !userWithNewEmail.get().equals(existingUser)) {
+//                throw new EmailAlreadyExistsException("Email already exists");
+//            }
+//        }
+//
+//        existingUser.setEmail(userDTO.getEmail());
+//        existingUser.setFirstname(userDTO.getFirstname());
+//        existingUser.setLastname(userDTO.getLastname());
+//        existingUser.setRole(userDTO.getRole());
+//
+//        if (userDTO.getPassword() != null && !userDTO.getPassword().isEmpty()) {
+//            String hashedPassword = passwordEncoder.encode(userDTO.getPassword());
+//            existingUser.setPassword(hashedPassword);
+//        }
+//
+//        userRepository.save(existingUser);
+//    }
 
 
     @Transactional
     @Modifying
     public void syncForce(List<UserDTO> userDTOs) {
 
-        userDTOs.forEach(u -> u.setRole(Role.USER));
+        userDTOs.forEach(u ->
+                {
+                    u.setRole(Role.USER);
+                    u.setTermsAccepted(false);
+                }
+        );
 
         List<User> usersToSave = this.userMapper.map(userDTOs);
 
@@ -138,7 +140,6 @@ public class UserService {
         userRepository.saveAll(usersToSave);
     }
 
-
     @Transactional
     public void sync(List<UserDTO> userDTOs) {
 
@@ -152,7 +153,12 @@ public class UserService {
                 .filter(dto -> !existingS1Ids.contains(dto.getS1Id()))
                 .collect(Collectors.toList());
 
-        usersToSync.forEach(u -> u.setRole(Role.USER));
+        usersToSync.forEach(u ->
+                {
+                    u.setRole(Role.USER);
+                    u.setTermsAccepted(false);
+                }
+        );
 
         List<User> usersToSave = this.userMapper.map(usersToSync);
 
@@ -216,6 +222,14 @@ public class UserService {
         String userId = jwtService.getUserId();
         this.userRepository.updateLanguage(userId, language);
     }
+
+    @Transactional
+    @Modifying
+    public List<UserDTO> findByIds(List<String> ids) {
+        List<User> users =  this.userRepository.findByIds(ids);
+        return this.userMapper.maplist(users);
+    }
+
 }
 
 

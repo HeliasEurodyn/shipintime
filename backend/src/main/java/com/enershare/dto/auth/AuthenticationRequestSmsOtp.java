@@ -13,6 +13,8 @@ public class AuthenticationRequestSmsOtp {
 
     private String phoneNumber;
 
+    private String prefix;
+
     private String logincode;
 
     private String language;

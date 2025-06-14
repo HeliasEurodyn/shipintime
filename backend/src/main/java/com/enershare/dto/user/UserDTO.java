@@ -3,6 +3,7 @@ package com.enershare.dto.user;
 import com.enershare.dto.base.BaseDTO;
 import com.enershare.enums.Role;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -37,7 +38,12 @@ public class UserDTO extends BaseDTO {
 
     private String language;
 
+    private String phonePrefix;
+
     private boolean termsAccepted;
+
+    @JsonProperty("isActive")
+    private boolean isActive;
 
     public UserDTO(String id, String username, String firstname, String lastname, String email,  String phone, Role role) {
         this.setId(id);

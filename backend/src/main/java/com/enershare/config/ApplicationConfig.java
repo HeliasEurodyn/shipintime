@@ -39,8 +39,6 @@ public class ApplicationConfig {
     @Value("${cors.origin.url}")
     private String corsOriginUrl;
 
-
-
     @Bean
     public UserDetailsService userDetailsService() {
         return userId  -> userRepository.findById(userId)
