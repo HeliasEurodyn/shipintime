@@ -176,4 +176,20 @@ public class StatsBoardRest {
 
     }
 
+    public void checkInSelected(Object body) throws JsonProcessingException {
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        String requestBody = mapper.writeValueAsString(body);
+
+        HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
+
+        restTemplate.exchange(
+                "https://agrohellas.oncloud.gr/s1services/JS/shipInTime.ShipInTimePlateController/checkInSelected", HttpMethod.POST,
+                request, byte[].class);
+
+    }
 }

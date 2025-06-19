@@ -19,4 +19,8 @@ public class StatsBoardService {
     public String getPlateWaitingStates(String from, String to) throws JsonProcessingException {
         return statsBoardRest.getWaitingStates(from, to);
     }
+
+    public void checkInSelected(Object body) throws JsonProcessingException {
+         statsBoardRest.checkInSelected(body);
+    }
 }

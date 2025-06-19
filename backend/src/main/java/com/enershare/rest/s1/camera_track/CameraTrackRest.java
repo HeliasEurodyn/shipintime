@@ -47,9 +47,11 @@ public class CameraTrackRest {
 
 
         if (response.getStatusCode() == HttpStatus.OK) {
+
             byte[] compressedData = response.getBody();
             String decompressedData = decompressGzip(compressedData, "windows-1253");
             return decompressedData;
+
         } else {
             return null;
         }
@@ -77,6 +79,7 @@ public class CameraTrackRest {
 
 
         if (response.getStatusCode() == HttpStatus.OK) {
+
             byte[] compressedData = response.getBody();
             String decompressedData = decompressGzip(compressedData, "windows-1253");
             return decompressedData;
