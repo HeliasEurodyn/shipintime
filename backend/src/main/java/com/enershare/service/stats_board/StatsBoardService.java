@@ -23,4 +23,8 @@ public class StatsBoardService {
     public void checkInSelected(Object body) throws JsonProcessingException {
          statsBoardRest.checkInSelected(body);
     }
+
+    public String getOrderDetails(String findoc) throws JsonProcessingException {
+        return statsBoardRest.getOrderDetails(findoc);
+    }
 }

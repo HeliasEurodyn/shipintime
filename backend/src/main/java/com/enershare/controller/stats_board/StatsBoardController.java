@@ -37,4 +37,9 @@ public class StatsBoardController {
         statsBoardService.checkInSelected(body);
     }
 
+    @GetMapping(path = "/order-details")
+    public String getOrderDetails(@RequestParam("findoc") String findoc) throws JsonProcessingException {
+        return statsBoardService.getOrderDetails(findoc);
+    }
+
 }

@@ -192,4 +192,35 @@ public class StatsBoardRest {
                 request, byte[].class);
 
     }
+
+    public String getOrderDetails(String findoc) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, String> body = new HashMap<>();
+        body.put("findoc", findoc);
+        body.put("pwd", pwd);
+
+        String requestBody = mapper.writeValueAsString(body);
+
+        HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
+
+        ResponseEntity<byte[]> response = restTemplate.exchange(
+                "https://agrohellas.oncloud.gr/s1services/JS/shipInTime.ShipInTimeSaldocController/getFindocDetailsById", HttpMethod.POST,
+                request, byte[].class);
+
+
+        if (response.getStatusCode() == HttpStatus.OK) {
+            byte[] compressedData = response.getBody();
+            String decompressedData = decompressGzip(compressedData, "windows-1253");
+            return decompressedData;
+
+        } else {
+            return null;
+        }
+
+    }
+
 }
