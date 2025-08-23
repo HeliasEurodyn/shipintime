@@ -84,8 +84,6 @@ public class StatsBoardRest {
                 "https://agrohellas.oncloud.gr/s1services/JS/shipInTime.ShipInTimeSaldocController/getBoardStats", HttpMethod.POST,
                 request, byte[].class);
 
-
-
         if (response.getStatusCode() != HttpStatus.OK) return null;
 
         byte[] raw = response.getBody();

@@ -1,5 +1,6 @@
 package com.enershare.rest.s1.camera_track;
 
+import com.enershare.rest.GZipHelper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.zip.GZIPInputStream;
 
 @Service
@@ -46,14 +48,35 @@ public class CameraTrackRest {
                 request, byte[].class);
 
 
-        if (response.getStatusCode() == HttpStatus.OK) {
+        if (response.getStatusCode() != HttpStatus.OK) return null;
 
-            byte[] compressedData = response.getBody();
-            String decompressedData = decompressGzip(compressedData, "windows-1253");
-            return decompressedData;
+        byte[] raw = response.getBody();
+        if (raw == null) return null;
 
-        } else {
-            return null;
+        String contentEncoding = Optional.ofNullable(response.getHeaders().getFirst(HttpHeaders.CONTENT_ENCODING))
+                .map(String::toLowerCase)
+                .orElse("");
+
+        // Determine charset; default to windows-1253 if server doesn’t specify
+        Charset charset = Optional.ofNullable(response.getHeaders().getContentType())
+                .map(MediaType::getCharset)
+                .orElse(Charset.forName("windows-1253"));
+
+        try {
+            byte[] decoded;
+
+            if (contentEncoding.contains("gzip") || GZipHelper.looksLikeGzip(raw)) {
+                decoded = GZipHelper.gunzip(raw);
+            } else if (contentEncoding.contains("deflate")) {
+                decoded = GZipHelper.inflate(raw);
+            } else {
+                decoded = raw; // plain
+            }
+
+            return new String(decoded, charset);
+        } catch (IOException io) {
+            // Optional: add logging with details and the first bytes for diagnostics
+            throw new RuntimeException("Failed to decode response body", io);
         }
 
     }
@@ -77,34 +100,35 @@ public class CameraTrackRest {
                 "https://agrohellas.oncloud.gr/s1services/JS/shipInTime.ShipInTimePlateController/getPlates", HttpMethod.POST,
                 request, byte[].class);
 
+        if (response.getStatusCode() != HttpStatus.OK) return null;
 
-        if (response.getStatusCode() == HttpStatus.OK) {
+        byte[] raw = response.getBody();
+        if (raw == null) return null;
 
-            byte[] compressedData = response.getBody();
-            String decompressedData = decompressGzip(compressedData, "windows-1253");
-            return decompressedData;
+        String contentEncoding = Optional.ofNullable(response.getHeaders().getFirst(HttpHeaders.CONTENT_ENCODING))
+                .map(String::toLowerCase)
+                .orElse("");
 
-          //  String tokenResponse = mapper.readValue(decompressedData, String.class);
-         //   return tokenResponse;
-        } else {
-            return null;
-        }
+        // Determine charset; default to windows-1253 if server doesn’t specify
+        Charset charset = Optional.ofNullable(response.getHeaders().getContentType())
+                .map(MediaType::getCharset)
+                .orElse(Charset.forName("windows-1253"));
 
-    }
+        try {
+            byte[] decoded;
 
-    public static String decompressGzip(byte[] compressed, String charset) {
-        try (GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(compressed));
-             InputStreamReader reader = new InputStreamReader(gis, Charset.forName(charset));
-             BufferedReader in = new BufferedReader(reader)) {
-
-            StringBuilder outStr = new StringBuilder();
-            String line;
-            while ((line = in.readLine()) != null) {
-                outStr.append(line);
+            if (contentEncoding.contains("gzip") || GZipHelper.looksLikeGzip(raw)) {
+                decoded = GZipHelper.gunzip(raw);
+            } else if (contentEncoding.contains("deflate")) {
+                decoded = GZipHelper.inflate(raw);
+            } else {
+                decoded = raw; // plain
             }
-            return outStr.toString();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to decompress GZIP response", e);
+
+            return new String(decoded, charset);
+        } catch (IOException io) {
+            // Optional: add logging with details and the first bytes for diagnostics
+            throw new RuntimeException("Failed to decode response body", io);
         }
     }
 
