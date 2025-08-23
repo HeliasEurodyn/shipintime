@@ -53,8 +53,6 @@
             <artifactId>mysql-connector-java</artifactId>
             <version>8.0.28</version> <!-- Adjust version if needed -->
         </dependency>
-
-
         <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>

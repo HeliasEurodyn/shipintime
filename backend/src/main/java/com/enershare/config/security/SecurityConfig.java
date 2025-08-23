@@ -41,8 +41,15 @@ public class SecurityConfig {
                         "/shiping-order/check-in/by-camera-tracks",
                         "/company/sync",
                         "/company/sync/force",
-                        "/shiping-order/load", "/shiping-order/su/reset","/shiping-order/su/execute",
-                        "/logs/create", "/error")
+                        "/shiping-order/load",
+                        "/shiping-order/su/reset",
+                        "/shiping-order/su/execute",
+                        "/logs/create",
+                        "/error",
+                        "/ws-native/**",
+                        "/plate-image/image",
+                        "/plate-image/test"
+                )
                 .permitAll()
                 .anyRequest()
                 .authenticated()

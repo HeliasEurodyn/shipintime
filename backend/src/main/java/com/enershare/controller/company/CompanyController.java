@@ -1,5 +1,6 @@
 package com.enershare.controller.company;
 
+import com.enershare.config.MyWebSocketHandler;
 import com.enershare.dto.company.CompanyDTO;
 import com.enershare.service.company.CompanyService;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,9 @@ public class CompanyController {
     @Autowired
     private CompanyService companyService;
 
+    @Autowired
+    private MyWebSocketHandler myWebSocketHandler;
+
     @PostMapping(path = "/sync")
     public void sync(@RequestBody List<CompanyDTO> companyDTOS) {
         companyService.sync(companyDTOS);
@@ -31,6 +35,12 @@ public class CompanyController {
     @GetMapping("/by-current-user")
     public List<CompanyDTO> getByCurrentUser() {
         return companyService.getByCurrentUser();
+    }
+
+
+    @GetMapping("/test")
+    public void test() {
+        myWebSocketHandler.broadcastJson("{\"name\":\"Alice\",\"age\":30,\"isMember\":true}");
     }
 
 }
