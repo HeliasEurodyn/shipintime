@@ -1,5 +1,7 @@
 package com.enershare.config;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -10,11 +12,19 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 public class MyWebSocketHandler extends TextWebSocketHandler {
 
     private final Set<WebSocketSession> sessions = ConcurrentHashMap.newKeySet();
+
+    @Autowired
+    private final ObjectMapper objectMapper;
+
+    public MyWebSocketHandler(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
@@ -37,6 +47,16 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
     public void broadcastMap(Map<String,String> payload) {
         String jsonString = this.toJsonString(payload);
         this.broadcastJson(jsonString);
+    }
+
+    public void broadcastObject(Object payload) {
+        try {
+            String json = objectMapper.writeValueAsString(payload);
+            this.broadcastJson(json);
+        } catch (JsonProcessingException e) {
+            // log and return; avoid sending partial/invalid JSON
+            // logger.warn("Failed to serialize payload", e);
+        }
     }
 
     // ✅ Call this method from anywhere (e.g., service or controller)
